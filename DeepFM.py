@@ -79,9 +79,7 @@ with tf.name_scope("Parameter"):
     v = tf.Variable(tf.zeros([n_features, fv]),name="V")
     embeddings = tf.multiply(v, Input_x) # None * V * X 
 
-    # W = tf.Variable(tf.truncated_normal([n_features, n_class-1]))
-    # b = tf.Variable(tf.truncated_normal([n_class]))
-    
+
 
     # 定义模型，此处使用与线性回归一样的定义
     # 因为在后面定义损失的时候会加上映射
@@ -89,13 +87,18 @@ with tf.name_scope("Prediction"):
     
     Y_liner = tf.matmul(x, W) + b
     #0.5*((sum(v*x))^2 - sum((v*x)^2)) 
-    Y_pair = 0.5 * tf.reduce_sum(
-        tf.subtract(tf.pow(tf.matmul(x, v), 2),#(sum(v*x))^2
-                tf.matmul(tf.pow(x, 2),tf.pow(v, 2))),#sum((v*x)^2)
-        axis=1,
-        keep_dims=True)
+    summed_features_emb = tf.reduce_sum(embeddings, 1)  # sum(v*x)
+    summed_features_emb_square = tf.square(summed_features_emb)  # (sum(v*x))^2
+
+    # square_sum part
+    squared_features_emb = tf.square(embeddings) # (v*x)^2
+    squared_sum_features_emb = tf.reduce_sum(squared_features_emb, 1)   # sum((v*x)^2)
+
     
-    pred= tf.add(Y_liner, Y_pair)
+    Y_pair = 0.5 * tf.subtract(summed_features_emb_square, squared_sum_features_emb)  # 0.5*((sum(v*x))^2 - sum((v*x)^2))
+    
+    
+    pred= tf.concat([Y_liner, Y_pair], axis=1) 
     
 """ 3 Deep层网络输出 """
 print("3 Deep层网络输出" )
